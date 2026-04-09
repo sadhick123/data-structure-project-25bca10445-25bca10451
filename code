@@ -1,0 +1,192 @@
+#include <stdio.h>
+#include <string.h>
+
+#define MAX 100
+
+// Customer structure
+struct Customer {
+    int ticketID;
+    char name[50];
+    int isVIP;
+};
+
+// Queues
+struct Customer normalQueue[MAX];
+struct Customer vipQueue[MAX];
+
+int frontN = -1, rearN = -1;
+int frontV = -1, rearV = -1;
+
+int ticketCounter = 1;
+int avgServiceTime = 3;
+
+// Check empty
+int isEmpty(int front) {
+    return front == -1;
+}
+
+// Enqueue
+void enqueue(struct Customer queue[], int *front, int *rear, struct Customer c) {
+    if (*rear == MAX - 1) {
+        printf("Queue Overflow!\n");
+        return;
+    }
+
+    if (*front == -1) *front = 0;
+    (*rear)++;
+    queue[*rear] = c;
+}
+
+// Dequeue
+struct Customer dequeue(struct Customer queue[], int *front, int *rear) {
+    struct Customer c = {-1, "", 0};
+
+    if (*front == -1) {
+        printf("Queue Underflow!\n");
+        return c;
+    }
+
+    c = queue[*front];
+
+    if (*front == *rear) {
+        *front = *rear = -1;
+    } else {
+        (*front)++;
+    }
+
+    return c;
+}
+
+// Add customer
+void addCustomer() {
+    struct Customer c;
+
+    printf("Enter customer name: ");
+    getchar(); // clear buffer
+    fgets(c.name, sizeof(c.name), stdin);
+
+    // remove newline
+    c.name[strcspn(c.name, "\n")] = 0;
+
+    printf("Is VIP? (1 = Yes, 0 = No): ");
+    scanf("%d", &c.isVIP);
+
+    c.ticketID = ticketCounter++;
+
+    if (c.isVIP) {
+        enqueue(vipQueue, &frontV, &rearV, c);
+        printf("VIP Customer Added! Ticket ID: %d\n", c.ticketID);
+    } else {
+        enqueue(normalQueue, &frontN, &rearN, c);
+        printf("Customer Added! Ticket ID: %d\n", c.ticketID);
+    }
+}
+
+// Serve customer
+void serveCustomer() {
+    struct Customer c;
+
+    if (!isEmpty(frontV)) {
+        c = dequeue(vipQueue, &frontV, &rearV);
+        printf("Serving VIP: %s (ID: %d)\n", c.name, c.ticketID);
+    } 
+    else if (!isEmpty(frontN)) {
+        c = dequeue(normalQueue, &frontN, &rearN);
+        printf("Serving: %s (ID: %d)\n", c.name, c.ticketID);
+    } 
+    else {
+        printf("No customers in queue.\n");
+    }
+}
+
+// View next
+void viewNext() {
+    if (!isEmpty(frontV)) {
+        printf("Next VIP: %s (ID: %d)\n", vipQueue[frontV].name, vipQueue[frontV].ticketID);
+    } 
+    else if (!isEmpty(frontN)) {
+        printf("Next Customer: %s (ID: %d)\n", normalQueue[frontN].name, normalQueue[frontN].ticketID);
+    } 
+    else {
+        printf("Queue is empty.\n");
+    }
+}
+
+// Display queues
+void displayQueues() {
+    int i;
+
+    printf("\n--- VIP Queue ---\n");
+    if (isEmpty(frontV)) printf("Empty\n");
+    else {
+        for (i = frontV; i <= rearV; i++) {
+            printf("%d - %s\n", vipQueue[i].ticketID, vipQueue[i].name);
+        }
+    }
+
+    printf("\n--- Normal Queue ---\n");
+    if (isEmpty(frontN)) printf("Empty\n");
+    else {
+        for (i = frontN; i <= rearN; i++) {
+            printf("%d - %s\n", normalQueue[i].ticketID, normalQueue[i].name);
+        }
+    }
+}
+
+// Estimate wait time
+void estimateWaitTime() {
+    int total = 0;
+
+    if (!isEmpty(frontV)) total += (rearV - frontV + 1);
+    if (!isEmpty(frontN)) total += (rearN - frontN + 1);
+
+    printf("Estimated waiting time: %d minutes\n", total * avgServiceTime);
+}
+
+// Stats
+void showStats() {
+    int vip = isEmpty(frontV) ? 0 : (rearV - frontV + 1);
+    int normal = isEmpty(frontN) ? 0 : (rearN - frontN + 1);
+
+    printf("\n===== Queue Statistics =====\n");
+    printf("VIP Customers: %d\n", vip);
+    printf("Normal Customers: %d\n", normal);
+    printf("Total Customers: %d\n", vip + normal);
+}
+
+// Menu
+void menu() {
+    printf("\n====== Smart Ticket System ======\n");
+    printf("1. Add Customer\n");
+    printf("2. Serve Customer\n");
+    printf("3. View Next Customer\n");
+    printf("4. Display All Queues\n");
+    printf("5. Estimate Wait Time\n");
+    printf("6. Show Statistics\n");
+    printf("7. Exit\n");
+    printf("Choose: ");
+}
+
+// Main
+int main() {
+    int choice;
+
+    do {
+        menu();
+        scanf("%d", &choice);
+
+        switch (choice) {
+            case 1: addCustomer(); break;
+            case 2: serveCustomer(); break;
+            case 3: viewNext(); break;
+            case 4: displayQueues(); break;
+            case 5: estimateWaitTime(); break;
+            case 6: showStats(); break;
+            case 7: printf("Exiting...\n"); break;
+            default: printf("Invalid choice!\n");
+        }
+
+    } while (choice != 7);
+
+    return 0;
+}
